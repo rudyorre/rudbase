@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>rudbase.com — Switchboard</title>
+  <meta name="description" content="Routing index and live browser reachability switchboard for *.rudbase.com and rudyorre.com projects by Rudy Orre." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./index.css" />
+</head>
+<body>
+  <main class="shell">
+    <!-- Patchbay Header -->
+    <header class="patch-header">
+      <div class="header-top">
+        <div>
+          <div class="brand-title">
+            <h1>rudbase.com</h1>
+            <span class="brand-tag">// switchboard</span>
+          </div>
+          <p class="brand-subtitle">
+            Index of tools, deployments, and experiments across <code>*.rudbase.com</code> &amp; <code>rudyorre.com</code>.
+          </p>
+        </div>
+
+        <a id="uplink-operator"
+           href="https://rudyorre.com"
+           target="_blank"
+           rel="noopener noreferrer"
+           class="operator-pill">
+          <span id="op-led" class="led led-probing" title="Probing rudyorre.com..."></span>
+          <span class="op-label">OP:</span>
+          <span class="op-domain">rudyorre.com</span>
+          <span id="op-ms" class="op-ms">...</span>
+          <span class="op-key">[0] &#8599;</span>
+        </a>
+      </div>
+
+      <!-- Telemetry Bar -->
+      <div class="telemetry-bar">
+        <div class="telemetry-counts">
+          <span class="stat-item">
+            <span class="led led-small led-online"></span>
+            <span id="count-online">0 online</span>
+          </span>
+          <span>&middot;</span>
+          <span class="stat-item">
+            <span class="led led-small led-warming"></span>
+            <span id="count-warming">0 slow</span>
+          </span>
+          <span>&middot;</span>
+          <span class="stat-item">
+            <span class="led led-small led-standby"></span>
+            <span id="count-standby">0 standby</span>
+          </span>
+        </div>
+
+        <div class="telemetry-controls">
+          <div role="tablist" aria-label="Grouping mode" class="segmented-group">
+            <button id="view-unified" type="button" role="tab" aria-selected="true" data-group="unified" class="seg-btn">
+              Unified
+            </button>
+            <button id="view-trunks" type="button" role="tab" aria-selected="false" data-group="trunks" class="seg-btn">
+              By Trunk
+            </button>
+          </div>
+
+          <button id="btn-reping" type="button" class="ctrl-btn" title="Re-run browser reachability probes [R]">
+            <span id="ping-dot" class="led led-small led-online"></span>
+            <span id="ping-label">Ping [R]</span>
+          </button>
+
+          <button id="btn-theme" type="button" class="ctrl-btn" title="Toggle color theme [T]" aria-label="Toggle color theme">
+            <span id="theme-label">Theme</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Switchboard Rack -->
+    <section id="switchboard-rack" class="rack-section" aria-label="Subdomain switchboard slots"></section>
+
+    <!-- Minimal Footer -->
+    <footer class="patch-footer">
+      <div>
+        <span>client probe: <code>fetch(no-cors)</code></span>
+        <span>&middot;</span>
+        <span id="probe-timestamp">checking...</span>
+      </div>
+      <div class="footer-links">
+        <span>[0&ndash;7] jump</span>
+        <a id="footer-github" href="https://github.com/rudyorre/rudbase" target="_blank" rel="noopener noreferrer">
+          github/rudyorre &#8599;
+        </a>
+      </div>
+    </footer>
+  </main>
+
+  <script>
+    /**
+     * Static site directory for rudbase.com.
+     * Reachability is probed directly from the visitor's browser on startup
+     * via `fetch(url, { mode: 'no-cors' })`.
+     */
+    const OPERATOR_SITE = {
+      url: 'https://rudyorre.com',
+      status: 'probing',
+      ms: null
+    };
+
+    const SITES = [
+      {
+        slot: '01',
+        key: '1',
+        trunk: 'rudbase.com',
+        hostPrefix: 'protopeek',
+        hostSuffix: '.rudbase.com',
+        name: 'ProtoPeek',
+        desc: 'Decode, inspect, and visualize protocol buffer wire messages',
+        url: 'https://protopeek.rudbase.com',
+        repo: 'https://github.com/rudyorre/protopeek',
+        provider: 'vercel'
+      },
+      {
+        slot: '02',
+        key: '2',
+        trunk: 'rudyorre.com',
+        hostPrefix: 'rudyorre.github.io',
+        hostSuffix: '/TensorFaux',
+        name: 'TensorFaux',
+        desc: 'Neural network library & docs built with a Keras-style API',
+        url: 'https://rudyorre.github.io/TensorFaux/',
+        repo: 'https://github.com/rudyorre/TensorFaux',
+        provider: 'gh-pages'
+      },
+      {
+        slot: '03',
+        key: '3',
+        trunk: 'rudyorre.com',
+        hostPrefix: 'sourcedrive',
+        hostSuffix: '.vercel.app',
+        name: 'SourceDrive',
+        desc: 'Cloud workspace and source file management interface',
+        url: 'https://sourcedrive.vercel.app',
+        repo: 'https://github.com/rudyorre/SourceDrive-v2',
+        provider: 'vercel'
+      },
+      {
+        slot: '04',
+        key: '4',
+        trunk: 'rudyorre.com',
+        hostPrefix: 'twostepgps',
+        hostSuffix: '.vercel.app',
+        name: 'TwoStepGPS',
+        desc: 'Real-time telemetry dashboard for live GPS device tracking',
+        url: 'https://twostepgps.vercel.app',
+        repo: 'https://github.com/rudyorre/TwoStepGPS',
+        provider: 'vercel'
+      },
+      {
+        slot: '05',
+        key: '5',
+        trunk: 'rudyorre.com',
+        hostPrefix: 'rudyorre.github.io',
+        hostSuffix: '/portfolio-archive',
+        name: 'Portfolio Archive',
+        desc: 'Earlier iteration of personal site and archived coursework',
+        url: 'https://rudyorre.github.io/portfolio-archive/',
+        repo: 'https://github.com/rudyorre/portfolio-archive',
+        provider: 'gh-pages'
+      },
+      {
+        slot: '06',
+        key: '6',
+        trunk: 'rudbase.com',
+        hostPrefix: 'viz',
+        hostSuffix: '.rudbase.com',
+        name: 'Data Visualizer',
+        desc: 'Interactive canvas for complex datasets and analytics',
+        url: 'https://viz.rudbase.com',
+        fixedStatus: 'standby',
+        fixedNote: 'in dev',
+        provider: 'vercel'
+      },
+      {
+        slot: '07',
+        key: '7',
+        trunk: 'rudbase.com',
+        hostPrefix: 'play',
+        hostSuffix: '.rudbase.com',
+        name: 'API Playground',
+        desc: 'Stateless HTTP request sandbox & response diffing',
+        url: 'https://play.rudbase.com',
+        fixedStatus: 'standby',
+        fixedNote: 'in dev',
+        provider: 'vercel'
+      }
+    ];
+
+    let groupMode = 'unified';
+    let isProbingAll = false;
+
+    const runtimeState = SITES.map((site) => ({
+      ...site,
+      status: site.fixedStatus ? site.fixedStatus : 'probing',
+      ms: null
+    }));
+
+    function formatTime(d) {
+      return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+    }
+
+    async function probeUrl(url, timeoutMs = 5000) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
+      const t0 = performance.now();
+      try {
+        await fetch(url, {
+          mode: 'no-cors',
+          cache: 'no-store',
+          signal: controller.signal
+        });
+        clearTimeout(timer);
+        const elapsed = Math.max(5, Math.round(performance.now() - t0));
+        return {
+          status: elapsed > 700 ? 'warming' : 'online',
+          ms: elapsed
+        };
+      } catch {
+        clearTimeout(timer);
+        return { status: 'standby', ms: null };
+      }
+    }
+
+    async function runAllProbes() {
+      if (isProbingAll) return;
+      isProbingAll = true;
+
+      OPERATOR_SITE.status = 'probing';
+      runtimeState.forEach((item) => {
+        if (!item.fixedStatus) {
+          item.status = 'probing';
+          item.ms = null;
+        }
+      });
+      render();
+
+      const opPromise = probeUrl(OPERATOR_SITE.url).then((res) => {
+        OPERATOR_SITE.status = res.status;
+        OPERATOR_SITE.ms = res.ms;
+      });
+
+      const sitePromises = runtimeState.map(async (item, idx) => {
+        if (item.fixedStatus) return;
+        await new Promise((r) => setTimeout(r, idx * 55));
+        const res = await probeUrl(item.url);
+        item.status = res.status;
+        item.ms = res.ms;
+        render();
+      });
+
+      await Promise.all([opPromise, ...sitePromises]);
+      isProbingAll = false;
+      document.getElementById('probe-timestamp').textContent = `checked ${formatTime(new Date())}`;
+      render();
+    }
+
+    function ledSpan(status) {
+      if (status === 'probing') {
+        return `<span class="led led-probing" title="Probing endpoint..."></span>`;
+      }
+      if (status === 'online') {
+        return `<span class="led led-online" title="Reachable (HTTP/TLS handshake OK)"></span>`;
+      }
+      if (status === 'warming') {
+        return `<span class="led led-warming" title="Elevated latency / cold start"></span>`;
+      }
+      return `<span class="led led-standby" title="Standby / Unreachable"></span>`;
+    }
+
+    function renderSlotRow(item) {
+      const isStandby = item.status === 'standby';
+      const latencyText = item.status === 'probing'
+        ? '...'
+        : item.ms !== null
+          ? `${item.ms}ms`
+          : (item.fixedNote || 'offline');
+
+      const latencyClass = item.status === 'warming'
+        ? 'latency-readout is-warming'
+        : 'latency-readout';
+
+      const srcMarkup = item.repo
+        ? `<a href="${item.repo}" target="_blank" rel="noopener noreferrer" class="src-link" title="View source on GitHub">src</a>`
+        : `<span class="src-disabled">src</span>`;
+
+      return `
+        <div class="slot-row ${isStandby ? 'is-standby' : ''}">
+          <a id="slot-link-${item.slot}"
+             href="${item.url}"
+             target="_blank"
+             rel="noopener noreferrer"
+             class="slot-main">
+            <span class="slot-num">${item.slot}</span>
+            ${ledSpan(item.status)}
+            <div class="slot-info">
+              <div class="slot-title-line">
+                <span class="slot-host">
+                  <span class="slot-host-prefix">${item.hostPrefix}</span><span class="slot-host-suffix">${item.hostSuffix}</span>
+                </span>
+                <span class="slot-desc-inline">&mdash; ${item.desc}</span>
+              </div>
+              <p class="slot-desc-mobile">${item.desc}</p>
+            </div>
+          </a>
+
+          <div class="slot-meta">
+            <span class="provider-badge">${item.provider}</span>
+            ${srcMarkup}
+            <span class="${latencyClass}">${latencyText}</span>
+            <span class="slot-key">[${item.key}]</span>
+          </div>
+        </div>
+      `;
+    }
+
+    function render() {
+      const opLed = document.getElementById('op-led');
+      const opMs = document.getElementById('op-ms');
+      if (OPERATOR_SITE.status === 'probing') {
+        opLed.className = 'led led-probing';
+        opMs.textContent = '...';
+      } else if (OPERATOR_SITE.status === 'online' || OPERATOR_SITE.status === 'warming') {
+        opLed.className = OPERATOR_SITE.status === 'warming' ? 'led led-warming' : 'led led-online';
+        opMs.textContent = OPERATOR_SITE.ms !== null ? `${OPERATOR_SITE.ms}ms` : 'ok';
+      } else {
+        opLed.className = 'led led-standby';
+        opMs.textContent = 'offline';
+      }
+
+      const onlineCount = runtimeState.filter((i) => i.status === 'online').length;
+      const warmingCount = runtimeState.filter((i) => i.status === 'warming').length;
+      const standbyCount = runtimeState.filter((i) => i.status === 'standby').length;
+      document.getElementById('count-online').textContent = `${onlineCount} online`;
+      document.getElementById('count-warming').textContent = `${warmingCount} slow`;
+      document.getElementById('count-standby').textContent = `${standbyCount} standby`;
+
+      const pingDot = document.getElementById('ping-dot');
+      const pingLabel = document.getElementById('ping-label');
+      pingDot.className = isProbingAll
+        ? 'led led-small led-probing'
+        : 'led led-small led-online';
+      pingLabel.textContent = isProbingAll ? 'Probing...' : 'Ping [R]';
+
+      document.querySelectorAll('.seg-btn').forEach((btn) => {
+        const active = btn.getAttribute('data-group') === groupMode;
+        btn.setAttribute('aria-selected', active ? 'true' : 'false');
+      });
+
+      const rack = document.getElementById('switchboard-rack');
+
+      if (groupMode === 'unified') {
+        const unassigned = `
+          <div class="slot-row is-unassigned">
+            <div class="slot-main">
+              <span class="slot-num">08</span>
+              <span class="led led-unassigned"></span>
+              <span class="slot-host"><span class="slot-host-suffix">unassigned slot</span></span>
+            </div>
+            <div class="slot-meta">
+              <span class="latency-readout">&mdash;</span>
+            </div>
+          </div>
+        `;
+        rack.innerHTML = `
+          <div class="rack-box">
+            ${runtimeState.map(renderSlotRow).join('')}
+            ${unassigned}
+          </div>
+        `;
+      } else {
+        const rudbaseItems = runtimeState.filter((i) => i.trunk === 'rudbase.com');
+        const otherItems = runtimeState.filter((i) => i.trunk !== 'rudbase.com');
+
+        rack.innerHTML = `
+          <div class="trunk-group">
+            <div class="trunk-header">
+              <span>TRUNK A // *.rudbase.com</span>
+              <span>${rudbaseItems.length} slots</span>
+            </div>
+            <div class="rack-box">
+              ${rudbaseItems.map(renderSlotRow).join('')}
+            </div>
+          </div>
+          <div class="trunk-group">
+            <div class="trunk-header">
+              <span>TRUNK B // rudyorre.com &amp; deployments</span>
+              <span>${otherItems.length} slots</span>
+            </div>
+            <div class="rack-box">
+              ${otherItems.map(renderSlotRow).join('')}
+            </div>
+          </div>
+        `;
+      }
+    }
+
+    // Theme toggle (cycles system -> dark -> light)
+    function toggleTheme() {
+      const root = document.documentElement;
+      const isDark = root.classList.contains('theme-dark') ||
+        (!root.classList.contains('theme-light') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+
+      root.classList.remove('theme-dark', 'theme-light');
+      root.classList.add(isDark ? 'theme-light' : 'theme-dark');
+    }
+
+    document.getElementById('btn-reping').addEventListener('click', runAllProbes);
+    document.getElementById('btn-theme').addEventListener('click', toggleTheme);
+
+    document.querySelectorAll('.seg-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        groupMode = btn.getAttribute('data-group');
+        render();
+      });
+    });
+
+    window.addEventListener('keydown', (e) => {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      const k = e.key.toLowerCase();
+      if (k === 'r') {
+        e.preventDefault();
+        runAllProbes();
+        return;
+      }
+      if (k === 't') {
+        e.preventDefault();
+        toggleTheme();
+        return;
+      }
+      if (k === '0') {
+        window.open(OPERATOR_SITE.url, '_blank', 'noopener,noreferrer');
+        return;
+      }
+      const match = runtimeState.find((i) => i.key === k);
+      if (match) {
+        window.open(match.url, '_blank', 'noopener,noreferrer');
+      }
+    });
+
+    runAllProbes();
+  </script>
+</body>
+</html>
